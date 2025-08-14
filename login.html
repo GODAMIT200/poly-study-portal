@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Login | Polytechnic Study Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-light d-flex align-items-center" style="min-height:100vh;">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="h4 mb-3 text-center">Polytechnic Study Portal</h1>
+            <div class="alert alert-info py-2">
+              <small>
+                Enter your polytechnic portal credentials to access study materials.
+              </small>
+            </div>
+            <div id="serverStatus" class="alert alert-warning py-2 d-none">
+              <small>
+                <strong>⚠️ Server Not Running!</strong><br>
+                Please start the backend server first:
+                <ol class="small mb-0 mt-1">
+                  <li>Double-click <code>start-server.bat</code></li>
+                  <li>Or run <code>node server.js</code> in terminal</li>
+                </ol>
+              </small>
+            </div>
+            <form id="loginForm">
+              <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input id="username" type="text" class="form-control" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input id="password" type="password" class="form-control" required />
+              </div>
+              <button class="btn btn-primary w-100" type="submit">Login</button>
+              <div id="loginError" class="text-danger mt-2 small d-none">Invalid credentials.</div>
+            </form>
+          </div>
+        </div>
+        <p class="text-center text-muted mt-3 mb-0 small">© Developed by Amit Singh Gujjar • For study use only</p>
+      </div>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Test server connection first
+    async function testConnection() {
+      try {
+        const response = await fetch('http://localhost:3000/api/subjects');
+        const data = await response.json();
+        console.log('✅ Server is running:', data);
+        return true;
+      } catch (error) {
+        console.error('❌ Server connection failed:', error);
+        return false;
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+      const errorDiv = document.getElementById('loginError');
+      try {
+        // Test server connection first
+        errorDiv.textContent = 'Connecting to server...';
+        errorDiv.classList.remove('d-none', 'text-danger');
+        errorDiv.classList.add('text-info');
+        
+        const serverOk = await testConnection();
+        if (!serverOk) {
+          errorDiv.textContent = '❌ Server not running! Please start the backend server first.';
+          errorDiv.classList.remove('text-info');
+          errorDiv.classList.add('text-danger');
+          return;
+        }
+        
+        // Show loading
+        errorDiv.textContent = 'Logging in...';
+        
+        const ok = await Auth.login(u, p);
+        
+        if (!ok) {
+          errorDiv.textContent = 'Invalid credentials. Try: admin/admin123 or student/student123';
+          errorDiv.classList.remove('text-info');
+          errorDiv.classList.add('text-danger');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        errorDiv.textContent = '❌ Login failed: ' + error.message;
+        errorDiv.classList.remove('text-info');
+        errorDiv.classList.add('text-danger');
+        errorDiv.classList.remove('d-none');
+      }
+    });
+
+    // Test connection on page load
+    window.addEventListener('load', async () => {
+      const serverOk = await testConnection();
+      const serverStatusDiv = document.getElementById('serverStatus');
+      
+      if (!serverOk) {
+        const errorDiv = document.getElementById('loginError');
+        errorDiv.textContent = '⚠️ Backend server is not running. Please start the server first.';
+        errorDiv.classList.remove('d-none', 'text-danger');
+        errorDiv.classList.add('text-warning');
+        
+        // Show server instructions
+        serverStatusDiv.classList.remove('d-none');
+      } else {
+        serverStatusDiv.classList.add('d-none');
+      }
+    });
+  </script>
+</body>
+</html>
